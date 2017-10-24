@@ -76,12 +76,18 @@ abstract class WatcherDaemonController extends DaemonController
                 $this->halt(self::EXIT_CODE_ERROR, 'pcntl_fork() returned error');
             } elseif ($pid === 0) {
                 $this->cleanLog();
+                file_put_contents($this->getPidPath(), $pid);
                 \Yii::$app->requestedRoute = $command_name;
                 \Yii::$app->runAction("$command_name", ['demonize' => 1]);
                 $this->halt(0);
             } else {
                 $this->initLogger();
                 \Yii::trace('Daemon ' . $job['daemon'] . ' is running with pid ' . $pid);
+                $pid_new = getmypid();
+                $pid_check = file_get_contents($this->getPidPath());
+                if ($pid_new != $pid_check) {
+                    file_put_contents($this->getPidPath(), $pid_new);
+                }
             }
         }
         \Yii::trace('Daemon ' . $job['daemon'] . ' is checked.');
